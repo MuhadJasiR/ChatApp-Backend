@@ -5,7 +5,7 @@ const pool = new Pool ({
     password:  'admin',
     host:  'localhost',
     port: 5432,
-    database: 'chatDb'
+    database: 'ChatDB'
 })
 
 export default pool;

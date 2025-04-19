@@ -1,7 +1,8 @@
 import { Request,Response } from "express";
-import bcrypt from "bcrypt";
+import bcrypt, { compare } from "bcrypt";
 import pool from "../models/db";
-import { Jwt } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
+import { error } from "console";
 
 
 const SALT_ROUNDS =10;
@@ -29,9 +30,26 @@ export const register = async(req: Request, res: Response)=>{
     }
 }
 
-export const login = async(req: Request, res: Response)=>{
+export const login = async(req: Request, res: Response): Promise<any>=>{
     // 1. get email,password
     // 2. Verify if email exist
     // 3. compare pwd -> "invalid credentials"
     // 4. return token
+    const {email,password }= req.body;
+    try {
+        const result = await pool.query(
+            "SELECT * FROM users WHERE email = $1",[email]
+        );
+        const user = result.rows[0];
+        if(!user) return res.status(404).json({error:'User not fount'});
+
+        const isMatch = await bcrypt.compare(password,user.password);
+        if(!isMatch)return res.status(400).json({error:"Invalid credential"});
+
+
+        const token = jwt.sign({id:user.id},JWT_SECRET,{expiresIn:"10h"});
+        res.json({message:"Logged in successfully", token});
+    } catch (error) {
+        res.status(500).json({error:"Failed to log in"});
+    }
 }
